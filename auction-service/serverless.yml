@@ -7,7 +7,14 @@ provider:
     name: aws
     runtime: nodejs18.x
     region: us-east-1
-
+    stage: ${opt:stage,'dev'}
+    iamRoleStatements:
+        - ${file(iam/AuctionsTableIam.yml):AuctionsTableIAM}
+    environment:
+        AUCTIONS_TABLE_NAME: ${self:custom.AuctionsTable.name}
+resources:
+    Resources:
+        AuctionsTable: ${file(resources/AuctionsTable.yml):AuctionsTable}
 functions:
     createAuction:
         handler: src/handlers/createAuction.handler
@@ -15,3 +22,14 @@ functions:
             - httpApi:
                   path: /auction
                   method: POST
+    getAuctions:
+        handler: src/handlers/getAuctions.handler
+        events:
+            - httpApi:
+                  path: /auction
+                  method: GET
+
+custom:
+    AuctionsTable:
+        name: !Ref AuctionsTable
+        arn: !GetAtt AuctionsTable.Arn

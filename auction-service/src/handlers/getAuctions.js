@@ -1,4 +1,3 @@
-const crypto = require("crypto");
 const AWS = require("aws-sdk");
 const middy = require("@middy/core");
 const httpJsonBodyParser = require("@middy/http-json-body-parser");
@@ -7,35 +6,28 @@ const httpErrorHandler = require("@middy/http-error-handler");
 const createError = require("http-errors");
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
-const createAuction = async (event) => {
-    const { title } = event.body;
-    const now = new Date();
-
-    const auction = {
-        id: crypto.randomBytes(10).toString("hex"),
-        title,
-        status: "OPEN",
-        createdAt: now.toISOString(),
-    };
+const getAuctions = async (event) => {
+    let auctions;
     try {
-        await dynamodb
-            .put({
+        const result = await dynamodb
+            .scan({
                 TableName: process.env.AUCTIONS_TABLE_NAME,
-                Item: auction,
             })
             .promise();
-    } catch (error) {
-        throw new createError.InternalServerError(error);
+
+        auctions = result.Items;
+    } catch (err) {
+        throw new createError.InternalServerError(err);
     }
     return {
-        statusCode: 201,
+        statusCode: 200,
         body: JSON.stringify({
-            data: auction,
+            data: auctions,
             success: true,
         }),
     };
 };
-module.exports.handler = middy(createAuction)
+module.exports.handler = middy(getAuctions)
     .use(httpErrorHandler())
     .use(httpEventNormaliser())
     .use(httpJsonBodyParser());
