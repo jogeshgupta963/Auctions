@@ -1,19 +1,24 @@
 const AWS = require("aws-sdk");
-const middy = require("@middy/core");
-const httpJsonBodyParser = require("@middy/http-json-body-parser");
-const httpEventNormaliser = require("@middy/http-event-normalizer");
-const httpErrorHandler = require("@middy/http-error-handler");
 const createError = require("http-errors");
 const dynamodb = new AWS.DynamoDB.DocumentClient();
+const commonMiddleware = require("../lib/commonMiddleware.js");
 
 const getAuctions = async (event) => {
     let auctions;
+    const { status } = event.queryStringParameters;
     try {
-        const result = await dynamodb
-            .scan({
-                TableName: process.env.AUCTIONS_TABLE_NAME,
-            })
-            .promise();
+        const params = {
+            TableName: process.env.AUCTIONS_TABLE_NAME,
+            IndexName: "statusAndEndDate",
+            KeyConditionExpression: "#status = :status",
+            ExpressionAttributeValues: {
+                ":status": status,
+            },
+            ExpressionAttributeNames: {
+                "#status": "status",
+            },
+        };
+        const result = await dynamodb.query(params).promise();
 
         auctions = result.Items;
     } catch (err) {
@@ -27,7 +32,4 @@ const getAuctions = async (event) => {
         }),
     };
 };
-module.exports.handler = middy(getAuctions)
-    .use(httpErrorHandler())
-    .use(httpEventNormaliser())
-    .use(httpJsonBodyParser());
+module.exports.handler = commonMiddleware(getAuctions);

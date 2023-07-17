@@ -28,6 +28,23 @@ functions:
             - httpApi:
                   path: /auction
                   method: GET
+    getAuction:
+        handler: src/handlers/getAuction.handler
+        events:
+            - httpApi:
+                  path: /auction/{id}
+                  method: GET
+    placeBid:
+        handler: src/handlers/placeBid.handler
+        events:
+            - httpApi:
+                  path: /auction/{id}/bid
+                  method: PUT
+
+    processAuctions:
+        handler: src/handlers/processAuctions.handler
+        # events:
+        #     - schedule: rate(1 minute)
 
 custom:
     AuctionsTable:

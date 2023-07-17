@@ -3,8 +3,15 @@ AuctionsTableIAM:
     Action:
         - dynamodb:PutItem
         - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:UpdateItem
+        - dynamodb:Query
     Resource:
         - ${self:custom.AuctionsTable.arn}
+        - !Join [
+              "/",
+              ["${self:custom.AuctionsTable.arn}", "index", "statusAndEndDate"],
+          ]
         # - arn:aws:dynamodb:us-east-1:747441403622:table/AuctionsTable
 
         # - arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/AuctionsTable

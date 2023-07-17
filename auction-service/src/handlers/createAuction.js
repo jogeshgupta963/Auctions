@@ -1,21 +1,23 @@
 const crypto = require("crypto");
 const AWS = require("aws-sdk");
-const middy = require("@middy/core");
-const httpJsonBodyParser = require("@middy/http-json-body-parser");
-const httpEventNormaliser = require("@middy/http-event-normalizer");
-const httpErrorHandler = require("@middy/http-error-handler");
 const createError = require("http-errors");
 const dynamodb = new AWS.DynamoDB.DocumentClient();
+const commonMiddleware = require("../lib/commonMiddleware.js");
 
 const createAuction = async (event) => {
     const { title } = event.body;
     const now = new Date();
-
+    const endDate = new Date();
+    endDate.setHours(now.getHours() + 1);
     const auction = {
         id: crypto.randomBytes(10).toString("hex"),
         title,
         status: "OPEN",
         createdAt: now.toISOString(),
+        endingAt: endDate.toISOString(),
+        highestBid: {
+            amount: 0,
+        },
     };
     try {
         await dynamodb
@@ -35,7 +37,4 @@ const createAuction = async (event) => {
         }),
     };
 };
-module.exports.handler = middy(createAuction)
-    .use(httpErrorHandler())
-    .use(httpEventNormaliser())
-    .use(httpJsonBodyParser());
+module.exports.handler = commonMiddleware(createAuction);
