@@ -17,7 +17,7 @@ const placeBid = async (event) => {
     if (email == auc.seller) {
         throw new createError.Forbidden("Cannot bid to ur own auction");
     }
-    if (highestBid.bidder == email) {
+    if (auc.highestBid.bidder == email) {
         throw new createError.Forbidden("Ur is highes bid already");
     }
     if (parseInt(amount) <= parseInt(auc.highestBid.amount)) {
@@ -35,7 +35,7 @@ const placeBid = async (event) => {
             id: auctionId,
         },
         UpdateExpression:
-            "set highestBid.amount = :amount, highestBid.bidder = :bidder",
+            "set highestBid.amount = :amount , highestBid.bidder = :bidder",
         ExpressionAttributeValues: {
             ":amount": amount,
             ":bidder": email,
