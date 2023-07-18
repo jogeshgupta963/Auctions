@@ -3,9 +3,14 @@ const AWS = require("aws-sdk");
 const createError = require("http-errors");
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 const commonMiddleware = require("../lib/commonMiddleware.js");
+const validatorMiddleware = require("@middy/validator");
+const { transpileSchema } = require("@middy/validator/transpile");
+const createAuctionSchema = require("../lib/schemas/createAuction.js");
 
 const createAuction = async (event) => {
     const { title } = event.body;
+    const { email } = event.requestContext.authorizer.lambda;
+    console.log(email);
     const now = new Date();
     const endDate = new Date();
     endDate.setHours(now.getHours() + 1);
@@ -18,6 +23,7 @@ const createAuction = async (event) => {
         highestBid: {
             amount: 0,
         },
+        seller: email,
     };
     try {
         await dynamodb
@@ -37,4 +43,11 @@ const createAuction = async (event) => {
         }),
     };
 };
-module.exports.handler = commonMiddleware(createAuction);
+module.exports.handler = commonMiddleware(createAuction).use(
+    validatorMiddleware({
+        eventSchema: transpileSchema(createAuctionSchema, {
+            useDefaults: true,
+            strict: false,
+        }),
+    })
+);

@@ -2,9 +2,13 @@ const AWS = require("aws-sdk");
 const createError = require("http-errors");
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 const commonMiddleware = require("../lib/commonMiddleware.js");
+const validatorMiddleware = require("@middy/validator");
+const { transpileSchema } = require("@middy/validator/transpile");
 
+const getAuctionSchema = require("../lib/schemas/getAuctions.js");
 const getAuctions = async (event) => {
     let auctions;
+
     const { status } = event.queryStringParameters;
     try {
         const params = {
@@ -32,4 +36,11 @@ const getAuctions = async (event) => {
         }),
     };
 };
-module.exports.handler = commonMiddleware(getAuctions);
+module.exports.handler = commonMiddleware(getAuctions).use(
+    validatorMiddleware({
+        eventSchema: transpileSchema(getAuctionSchema, {
+            useDefaults: true,
+            strict: false,
+        }),
+    })
+);

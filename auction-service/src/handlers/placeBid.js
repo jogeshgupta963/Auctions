@@ -3,12 +3,23 @@ const createError = require("http-errors");
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 const commonMiddleware = require("../lib/commonMiddleware.js");
 const { getAuctionById } = require("./getAuction.js");
+const validatorMiddleware = require("@middy/validator");
+const { transpileSchema } = require("@middy/validator/transpile");
+
+const placeBidSchema = require("../lib/schemas/placeBid.js");
 
 const placeBid = async (event) => {
     const auctionId = event.pathParameters.id;
     const { amount } = event.body;
+    const { email } = event.requestContext.authorizer.lambda;
 
     const auc = await getAuctionById(auctionId);
+    if (email == auc.seller) {
+        throw new createError.Forbidden("Cannot bid to ur own auction");
+    }
+    if (highestBid.bidder == email) {
+        throw new createError.Forbidden("Ur is highes bid already");
+    }
     if (parseInt(amount) <= parseInt(auc.highestBid.amount)) {
         throw new createError.Forbidden("Bid cannot be lower");
     }
@@ -23,9 +34,11 @@ const placeBid = async (event) => {
         Key: {
             id: auctionId,
         },
-        UpdateExpression: "set highestBid.amount = :amount",
+        UpdateExpression:
+            "set highestBid.amount = :amount, highestBid.bidder = :bidder",
         ExpressionAttributeValues: {
             ":amount": amount,
+            ":bidder": email,
         },
         ReturnValues: "ALL_NEW",
     };
@@ -47,4 +60,11 @@ const placeBid = async (event) => {
         }),
     };
 };
-module.exports.handler = commonMiddleware(placeBid);
+module.exports.handler = commonMiddleware(placeBid).use(
+    validatorMiddleware({
+        eventSchema: transpileSchema(placeBidSchema, {
+            useDefaults: true,
+            strict: false,
+        }),
+    })
+);

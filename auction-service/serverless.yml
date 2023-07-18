@@ -12,9 +12,15 @@ provider:
         - ${file(iam/AuctionsTableIam.yml):AuctionsTableIAM}
     environment:
         AUCTIONS_TABLE_NAME: ${self:custom.AuctionsTable.name}
+    httpApi:
+        authorizers:
+            customAuthorizer:
+                type: request
+                functionArn: ${self:custom.authorizer}
 resources:
     Resources:
         AuctionsTable: ${file(resources/AuctionsTable.yml):AuctionsTable}
+
 functions:
     createAuction:
         handler: src/handlers/createAuction.handler
@@ -22,24 +28,34 @@ functions:
             - httpApi:
                   path: /auction
                   method: POST
+                  authorizer:
+                      name: customAuthorizer
+
     getAuctions:
         handler: src/handlers/getAuctions.handler
         events:
             - httpApi:
                   path: /auction
                   method: GET
+                  authorizer:
+                      name: customAuthorizer
+
     getAuction:
         handler: src/handlers/getAuction.handler
         events:
             - httpApi:
                   path: /auction/{id}
                   method: GET
+                  authorizer:
+                      name: customAuthorizer
     placeBid:
         handler: src/handlers/placeBid.handler
         events:
             - httpApi:
                   path: /auction/{id}/bid
                   method: PUT
+                  authorizer:
+                      name: customAuthorizer
 
     processAuctions:
         handler: src/handlers/processAuctions.handler
@@ -47,6 +63,7 @@ functions:
         #     - schedule: rate(1 minute)
 
 custom:
+    authorizer: arn:aws:lambda:us-east-1:747441403622:function:auth-service-dev-auth
     AuctionsTable:
         name: !Ref AuctionsTable
         arn: !GetAtt AuctionsTable.Arn

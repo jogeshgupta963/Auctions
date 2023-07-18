@@ -1,0 +1,16 @@
+org: jogeshgupta963
+app: notification-service
+service: notification-service
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+
+functions:
+  api:
+    handler: index.handler
+    events:
+      - httpApi:
+          path: /
+          method: get
