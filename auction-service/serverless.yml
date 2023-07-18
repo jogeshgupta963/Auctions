@@ -11,9 +11,11 @@ provider:
     iamRoleStatements:
         - ${file(iam/AuctionsTableIam.yml):AuctionsTableIAM}
         - ${file(iam/MailQueueIam.yml):MailQueueIAM}
+        - ${file(iam/AuctionsBucketIam.yml):AuctionsBucketIAM}
     environment:
         AUCTIONS_TABLE_NAME: ${self:custom.AuctionsTable.name}
         MAIL_QUEUE_URL: ${self:custom.MailQueue.url}
+        AuctionsBucketName: ${self:custom.AuctionsBucket.name}
     httpApi:
         authorizers:
             customAuthorizer:
@@ -22,6 +24,8 @@ provider:
 resources:
     Resources:
         AuctionsTable: ${file(resources/AuctionsTable.yml):AuctionsTable}
+        AuctionsBucket: ${file(resources/AuctionsBucket.yml):AuctionsBucket}
+        AuctionsBucketPolicy: ${file(resources/AuctionsBucket.yml):AuctionsBucketPolicy}
 
 functions:
     createAuction:
@@ -58,6 +62,14 @@ functions:
                   method: PUT
                   authorizer:
                       name: customAuthorizer
+    uploadAuctionPicture:
+        handler: src/handlers/uploadAuctionPicture.handler
+        events:
+            - httpApi:
+                  path: /auction/{id}/picture
+                  method: PUT
+                  authorizer:
+                      name: customAuthorizer
 
     processAuctions:
         handler: src/handlers/processAuctions.handler
@@ -72,3 +84,6 @@ custom:
     MailQueue:
         arn: ${cf:notification-service-${self:provider.stage}.MailQueueArn}
         url: ${cf:notification-service-${self:provider.stage}.MailQueueUrl}
+    AuctionsBucket:
+        name: auctions-bucket-fasf6asf5-${self:provider.stage}
+        arn: !GetAtt AuctionsBucket.Arn

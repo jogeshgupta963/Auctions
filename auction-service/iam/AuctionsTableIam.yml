@@ -12,6 +12,3 @@ AuctionsTableIAM:
               "/",
               ["${self:custom.AuctionsTable.arn}", "index", "statusAndEndDate"],
           ]
-        # - arn:aws:dynamodb:us-east-1:747441403622:table/AuctionsTable
-
-        # - arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/AuctionsTable
